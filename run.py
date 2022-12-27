@@ -1,10 +1,15 @@
 from tkinter import Tk, Canvas, Frame, BOTH
 
+import gc
+
 import math
+
+from sys import argv
 
 import utils
 from utils import coordinates
 from utils import grades
+from utils import params
 from visualization import primitives
 
 from geometry import point
@@ -13,9 +18,10 @@ from geometry import block
 
 from time import time
 
-bm_coordintates = coordinates.Coordinates.load("data/BM_OCTOBER_2022_FINAL.csv", ["EAST", "NORTH", "Cu_PCT"])
-contour_coordinates = coordinates.Coordinates.load("data/TEST_AREA.csv", ["EAST", "NORTH"])
-grades = grades.Grades.load("data/grades.csv", ["START", "END", "COLOR"])
+params = params.Params(argv[1])
+bm_coordintates = coordinates.Coordinates.load(params.get_bm_file(), params.get_bm_fields())
+contour_coordinates = coordinates.Coordinates.load(params.get_contour_file(), params.get_contour_fields())
+grades = grades.Grades.load(params.get_grades_file(), params.get_grades_fields())
 
 lines = []
 p1 = None
@@ -24,22 +30,29 @@ min_y = math.inf
 max_x = 0
 max_y = 0
 
-BLOCK_SIZE = 5
+BLOCK_SIZE = int(params.get_block_size())
 
 blocks = []
 counter = 0
+s = time()
+
 for index, row in bm_coordintates.iterrows():
-    x = float(row['EAST'].replace(",", "."))
-    y = float(row['NORTH'].replace(",", "."))
-    c = float(row['Cu_PCT'].replace(",", "."))
+    x = float(row[params.get_x()])
+    y = float(row[params.get_y()])
+    c = float(row[params.get_metal()])
     b = block.Block(x, y, c, counter)
     blocks.append(b)
     counter += 1
+e = time()
+print("Loaded BM (ms) " + str((e-s)*1000))
 
+
+
+s = time()
 for index, row in contour_coordinates.iterrows():
 
-    x = float(row['EAST'].replace(",", "."))
-    y = float(row['NORTH'].replace(",", "."))
+    x = float(row[params.get_x()])
+    y = float(row[params.get_y()])
 
     if x > max_x:
         max_x = x
@@ -71,7 +84,9 @@ max_x_ = max_x - min_x
 max_y_ = max_y - min_y
 min_y_ = min_y - min_y
 min_x_ = min_x - min_x
+e = time()
 
+print("Loaded contour, ms " + str((e-s)*1000))
 
 root = Tk()
 graphics = primitives.Graphics(root)
@@ -92,6 +107,22 @@ blocks_to_draw = []
 
 s = time()
 
+
+no_duplicates = []
+duplicates = {}
+# Supress the duplicates
+for b1 in blocks:
+    dup_found = False
+    if not duplicates.get(str(b1), None):
+        no_duplicates.append(b1)
+        duplicates[str(b1)] = True
+duplicates = None
+blocks = no_duplicates
+
+
+
+print("Assigning blocks to contour")
+
 index = 0
 for b in blocks:
     counter = 0
@@ -111,35 +142,22 @@ print("Total blocks: " + str(len(blocks)))
 print("Total blocks to draw: " + str(len(blocks_to_draw)))
 print("Find blocks inside the main contour: " + str((e-s)*1000))
 
-# The complexity of this algorithm is O(k)
+# The complexity of this algorithm is O(kt)
 # Where k is the number of blocks to draw
+# t is the number of grades
 for b in blocks_to_draw:
-    if b.cmetal >= 0 and b.cmetal < 0.15:
-        color = "gray"
-    elif b.cmetal >= 0.15 and b.cmetal < 0.20:
-        color = "green"
-    elif b.cmetal >= 0.20 and b.cmetal < 0.30:
-        color = "blue"
-    elif b.cmetal >= 0.30 and b.cmetal < 0.46:
-        color = "red"
-    else:
-        color = "orange"
-    canvas.draw_block(point.Point(b.x - min_x + 100, b.y - min_y), point.Point(b.x + BLOCK_SIZE - min_x + 100, b.y + BLOCK_SIZE - min_y), color)
-
-
-# The complexity of this block of code is O(k)
-# Where k is the number of blocks inside the master contour
-for b in blocks_to_draw:
-    if b.cmetal >= 0 and b.cmetal < 0.15:
-        b.grade = 1
-    elif b.cmetal >= 0.15 and b.cmetal < 0.20:
-        b.grade = 2
-    elif b.cmetal >= 0.20 and b.cmetal < 0.30:
-        b.grade = 4
-    elif b.cmetal >= 0.30 and b.cmetal < 0.46:
-        b.grade = 5
-    else:
-        b.grade = 6
+    for index, row in grades.iterrows():
+        if row[1] != math.inf:
+            if float(row[0]) <= b.cmetal and b.cmetal < float(row[1]):
+                b.color = row[2]
+                b.grade = int(row[3])
+                break
+        else:
+            if float(row[0]) <= b.cmetal:
+                b.color = row[2]
+                b.grade = int(row[3])
+                break
+    canvas.draw_block(point.Point(b.x - min_x + 100, b.y - min_y), point.Point(b.x + BLOCK_SIZE - min_x + 100, b.y + BLOCK_SIZE - min_y), b.color)
 
 # The complexity of this algorithm is O(k^2)
 # Where k is the number of blocks that fall inside the contour
@@ -153,50 +171,64 @@ contour_index = 0
 for b in blocks_to_draw:
     b.visited = False
 
+# The complexity of the algorithm is
+# O(lvk)
 for b in blocks_to_draw:
+
     # l - number of contours
     if b.visited:
         continue
+    
     queue = [b]
-    adjucency_matrix = []
+    
     visited = [False] * len(blocks_to_draw)
-    b.contour = contour_index
-    for i in range(0, len(blocks_to_draw)):
-        adjucency_matrix.append([None] * len(blocks_to_draw))
+    adjucency_matrix = []
+
     while len(queue) > 0:
+
         # v - average number of blocks in contour
         # Get the first item from the list
+        
         b1 = queue.pop(0)
-        b1.visited = True
-        adjucency_matrix[b1.index][b1.index] = b
+        adjucency_matrix.append(b1)
+
         for b2 in blocks_to_draw:
+
             # k - number of blocks in the main contour
             # Use only those blocks that were not visited
+
             if b2.visited:
                 continue
-            if b1.x + BLOCK_SIZE == b2.x and b1.y == b2.y and b1.grade == b2.grade and b2.visited == False:
-                b2.visited = True
-                adjucency_matrix[b1.index][b2.index] = b2
-                queue.append(b2)
-            if b1.x - BLOCK_SIZE == b2.x and b1.y == b2.y and b1.grade == b2.grade and b2.visited == False:
-                b2.visited = True
-                adjucency_matrix[b1.index][b2.index] = b2
-                queue.append(b2)
-            if b1.x == b2.x and b1.y + BLOCK_SIZE == b2.y and b1.grade == b2.grade and b2.visited == False:
-                b2.visited = True
-                adjucency_matrix[b1.index][b2.index] = b2
-                queue.append(b2)
-            if b1.x == b2.x and b1.y - BLOCK_SIZE == b2.y and b1.grade == b2.grade and b2.visited == False:
-                b2.visited = True
-                adjucency_matrix[b1.index][b2.index] = b2
-                queue.append(b2)
+            
+            if b1.x + BLOCK_SIZE == b2.x and b1.y == b2.y and b1.grade == b2.grade:
+                if not b2.visited:                    
+                    queue.append(b2)
+                    b2.visited = True
+                    adjucency_matrix.append(b2)
+            
+            if b1.x - BLOCK_SIZE == b2.x and b1.y == b2.y and b1.grade == b2.grade:
+                if not b2.visited:
+                    queue.append(b2)
+                    b2.visited = True
+                    adjucency_matrix.append(b2)
+
+            if b1.x == b2.x and b1.y + BLOCK_SIZE == b2.y and b1.grade == b2.grade:
+                if not b2.visited:                    
+                    queue.append(b2)
+                    b2.visited = True
+                    adjucency_matrix.append(b2)
+
+            if b1.x == b2.x and b1.y - BLOCK_SIZE == b2.y and b1.grade == b2.grade:
+                if not b2.visited:                    
+                    queue.append(b2)
+                    b2.visited = True
+                    adjucency_matrix.append(b2)
     
     for i in range(0, len(adjucency_matrix)):
-        for j in range(0, len(adjucency_matrix)):
-            if adjucency_matrix[i][j]:
-                adjucency_matrix[i][j].contour = contour_index
+        adjucency_matrix[i].contour = contour_index
 
     contour_index += 1
+
 # The complexity of the whole algorithm is O(max(lkv, nm))
 e = time()
 print("Find subcontours: " + str((e-s)*1000))
@@ -211,8 +243,12 @@ COLORS  =['linen', 'red', 'green', 'blue', 'bisque', 'orange',
 'dodger blue', 'salmon']
 
 for b in blocks_to_draw:
-    canvas.draw_block(point.Point(b.x - min_x, b.y - min_y), point.Point(b.x + BLOCK_SIZE - min_x, b.y + BLOCK_SIZE - min_y), COLORS[b.contour])
+    canvas.draw_block(point.Point(b.x - min_x, b.y - min_y), point.Point(b.x + BLOCK_SIZE - min_x, b.y + BLOCK_SIZE - min_y), COLORS[b.contour % len(COLORS)])
+    canvas.draw_text(point.Point(b.x - min_x + 2.5, b.y - min_y + 2.5), str(b.contour), color="black")
 
+s1 = time()
+
+# The complexity of the algorithm is O(lv^2)
 output_strings = []
 result = []
 for i in range(0, contour_index - 1):
@@ -222,8 +258,7 @@ for i in range(0, contour_index - 1):
         # O(k) - number of blocks to draw
         if b.contour == i:
             blocks_in_contour.append(b)
-    end = []
-    start = []
+    sclines = []
     # O(v^2) - average number of blocks in contour
     for b1 in blocks_in_contour:
         
@@ -242,67 +277,80 @@ for i in range(0, contour_index - 1):
             if b1.x == b2.x and b1.y - BLOCK_SIZE == b2.y:
                 top = True
         if not right:
-            start.append(point.Point(b1.x + 200 - min_x + BLOCK_SIZE, b1.y - min_y))
-            end.append(point.Point(b1.x + BLOCK_SIZE + 200 - min_x, b1.y - min_y + BLOCK_SIZE))
-            end.append(point.Point(b1.x + 200 - min_x + BLOCK_SIZE, b1.y - min_y))
-            start.append(point.Point(b1.x + BLOCK_SIZE + 200 - min_x, b1.y - min_y + BLOCK_SIZE))
-            #print(point.Point(b1.x + 200 - min_x + BLOCK_SIZE, b1.y - min_y))
-            #print(point.Point(b1.x + BLOCK_SIZE + 200 - min_x, b1.y - min_y + BLOCK_SIZE))
-            #print('-----')
+            sclines.append(line.Line(point.Point(b1.x + 200 - min_x + BLOCK_SIZE, b1.y - min_y), point.Point(b1.x + BLOCK_SIZE + 200 - min_x, b1.y - min_y + BLOCK_SIZE)))
             canvas.draw_line(point.Point(b1.x + 200 - min_x + BLOCK_SIZE, b1.y - min_y), point.Point(b1.x + BLOCK_SIZE + 200 - min_x, b1.y - min_y + BLOCK_SIZE), width=4, color="red")
         if not left:
-            start.append(point.Point(b1.x + 200 - min_x, b1.y - min_y))
-            end.append(point.Point(b1.x + 200 - min_x, b1.y - min_y + BLOCK_SIZE))
-            end.append(point.Point(b1.x + 200 - min_x, b1.y - min_y))
-            start.append(point.Point(b1.x + 200 - min_x, b1.y - min_y + BLOCK_SIZE))
-            #print(point.Point(b1.x + 200 - min_x, b1.y - min_y))
-            #print(point.Point(b1.x + 200 - min_x, b1.y - min_y + BLOCK_SIZE))
-            #print('-----')
+            sclines.append(line.Line(point.Point(b1.x + 200 - min_x, b1.y - min_y), point.Point(b1.x + 200 - min_x, b1.y - min_y + BLOCK_SIZE)))
             canvas.draw_line(point.Point(b1.x + 200 - min_x, b1.y - min_y), point.Point(b1.x + 200 - min_x, b1.y - min_y + BLOCK_SIZE), width=4, color="red")
         if not top:
-            start.append(point.Point(b1.x + 200 - min_x, b1.y - min_y))
-            end.append(point.Point(b1.x + 200 - min_x + BLOCK_SIZE, b1.y - min_y))
-            end.append(point.Point(b1.x + 200 - min_x, b1.y - min_y))
-            start.append(point.Point(b1.x + 200 - min_x + BLOCK_SIZE, b1.y - min_y))
-            #print(point.Point(b1.x + 200 - min_x, b1.y - min_y))
-            #print(point.Point(b1.x + BLOCK_SIZE + 200 - min_x, b1.y - min_y))
-            #print('-----')
+            sclines.append(line.Line(point.Point(b1.x + 200 - min_x, b1.y - min_y), point.Point(b1.x + 200 - min_x + BLOCK_SIZE, b1.y - min_y)))
             canvas.draw_line(point.Point(b1.x + 200 - min_x, b1.y - min_y), point.Point(b1.x + 200 - min_x + BLOCK_SIZE, b1.y - min_y), width=4, color="red")
         if not bottom:
-            start.append(point.Point(b1.x + 200 - min_x, b1.y - min_y + BLOCK_SIZE))
-            end.append(point.Point(b1.x + 200 - min_x + BLOCK_SIZE, b1.y - min_y + BLOCK_SIZE))
-            end.append(point.Point(b1.x + 200 - min_x, b1.y - min_y + BLOCK_SIZE))
-            start.append(point.Point(b1.x + 200 - min_x + BLOCK_SIZE, b1.y - min_y + BLOCK_SIZE))
-            #print(point.Point(b1.x + 200 - min_x, b1.y - min_y + BLOCK_SIZE))
-            #print(point.Point(b1.x + BLOCK_SIZE + 200 - min_x, b1.y - min_y + BLOCK_SIZE))
-            #print('-----')
+            sclines.append(line.Line(point.Point(b1.x + 200 - min_x, b1.y - min_y + BLOCK_SIZE), point.Point(b1.x + 200 - min_x + BLOCK_SIZE, b1.y - min_y + BLOCK_SIZE)))
             canvas.draw_line(point.Point(b1.x + 200 - min_x, b1.y - min_y + BLOCK_SIZE), point.Point(b1.x + 200 - min_x + BLOCK_SIZE, b1.y - min_y + BLOCK_SIZE), width=4, color="red")
-    
+
     """
-    visited = []
-    queue = [0]
-    #result.append(str(start[0].x) + ";" + str(start[0].y) + ";" + str(i))
-    for i in range(0, len(start)):
-        print(str(start[i]) + " " + str(end[i]))
-    print("-----------------")
-    """
-    z = 0
+    o = 0
     s = 0
-    e = None
+    visited = [False] * len(sclines)
+    c1 = 0
+    
+    while True:
+
+        for e in range(0, len(sclines)):
+
+            if visited[e]:
+                continue
+
+            if ((sclines[s].p2.x == sclines[e].p1.x and sclines[s].p2.y == sclines[e].p1.y)):
+                canvas.draw_line(sclines[e].p1, sclines[e].p2, width=4, color="black")
+                result.append(str(sclines[e].p1.x) + ";" + str(sclines[e].p1.y) + ";" + str(i))
+                visited[e] = True
+                s = e
+                c1 += 1
+                break
+
+            if (sclines[s].p2.x == sclines[e].p2.x and sclines[s].p2.y == sclines[e].p2.y):
+                canvas.draw_line(sclines[e].p1, sclines[e].p2, width=4, color="black")
+                result.append(str(sclines[e].p1.x) + ";" + str(sclines[e].p1.y) + ";" + str(i)) 
+                visited[e] = True
+                s = e
+                c1 += 1
+                break
+
+            if (sclines[s].p1.x == sclines[e].p2.x and sclines[s].p1.y == sclines[e].p2.y):
+                canvas.draw_line(sclines[e].p1, sclines[e].p2, width=4, color="black")
+                result.append(str(sclines[e].p2.x) + ";" + str(sclines[e].p2.y) + ";" + str(i))
+                visited[e] = True
+                s = e
+                c1 += 1
+                break
+
+            if (sclines[s].p1.x == sclines[e].p1.x and sclines[s].p1.y == sclines[e].p1.y):
+                canvas.draw_line(sclines[e].p1, sclines[e].p2, width=4, color="black")
+                result.append(str(sclines[e].p2.x) + ";" + str(sclines[e].p2.y) + ";" + str(i))
+                visited[e] = True
+                s = e
+                c1 += 1
+                break
+
+            if c1 < len(sclines) and s == o:
+                print("One contour is done")
+                for i in range(0, len(visited)):
+                    if not visited:
+                        s = i
+                        o = i
+                        break
+        
+        if c1 == len(sclines):
+            break
     """
-    while e != 0:
-        for s in range(0, len(start)):
-            if end[e].x == start[s].x and end[e].y == start[s].y:
-                #result.append(str(end[s].x) + ";" + str(end[s].y) + ";" + str(i))
-                canvas.draw_line(start[e], end[s], width=4, color="black")
-                #print(str(end[s].x) + ";" + str(end[e].y) + ";" + str(i))
-                e = s
-    print(">>>>>>>>>>>>>>")
-    """
-    #break
+e1 = time()
+print("Saving contours in the file, ms: " + str(((e1-s1)*1000)))
+
 fd = open("output/strings2.csv", "w")
 for s in result:
     fd.write(s + "\n")
 fd.close()
 
-#root.mainloop()
+root.mainloop()

@@ -8,6 +8,7 @@ class Block():
         self.visited = False
         self.index = index
         self.adjucent = []
+        self.color = "gray"
 
     def __str__(self):
         return "Block: x=" + str(self.x) + " y=" + str(self.y) + " contour=" + str(self.contour) 

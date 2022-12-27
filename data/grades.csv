@@ -1,5 +1,8 @@
-START;END;COLOR
-0;15;gray
-15;20;green
-20;30;blue
-30;46;red
+START;END;COLOR;GRADE
+0;7.5;yellow;1
+7.5;9.5;green;2
+9.5;11.5;blue;3
+11.5;13.5;red;4
+13.5;15.5;orange;5
+15.5;17.5;black;6
+17.5;inf;purple;7

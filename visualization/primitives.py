@@ -38,7 +38,7 @@ class Canvas():
         self.graphics.draw_square(p1.x * self.scale, p1.y * self.scale, p2.x * self.scale, p2.y * self.scale, color)
 
     def draw_text(self, p1, text, width=5, color="red"):
-        self.graphics.draw_text(p1.x * self.scale, p1.y * self.scale, text=text, fill=color)
+        self.graphics.draw_text(p1.x * self.scale, p1.y * self.scale, text=text, color=color)
 
 class Color():
     def __init__(self):
@@ -62,7 +62,7 @@ class Graphics():
         self.objects.append(obj)
 
     def draw_text(self, x, y, text, color):
-        obj = self.canvas.create_text(x, y, text=text, fill=color, font=('Helvetica 15 bold'))
+        obj = self.canvas.create_text(x, y, text=text, fill=color, font=('Helvetica 8 bold'))
         self.objects.append(obj)
 
     def clear(self):

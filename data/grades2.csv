@@ -1,0 +1,6 @@
+START;END;COLOR;GRADE
+0;0.15;yellow;1
+0.15;0.20;green;2
+0.20;0.30;blue;3
+0.30;0.46;red;4
+0.46;inf;orange;5

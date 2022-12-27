@@ -3,6 +3,9 @@ class Line():
         self.p1 = p1
         self.p2 = p2
     
+    def __str__(self):
+        return str(self.p1) + " " + str(self.p2)
+    
     def intersect_line_line(self, line):
         # Checks if the two lines intersect
         #(i) compute the slopes
