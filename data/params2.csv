@@ -9,3 +9,4 @@ X;EAST;;;
 Y;NORTH;;;
 METAL;Cu_PCT;;;
 BLOCK_SIZE;5;;;
+OUTPUT;output/strings_final.csv;;;

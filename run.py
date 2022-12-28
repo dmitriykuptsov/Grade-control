@@ -251,6 +251,7 @@ s1 = time()
 # The complexity of the algorithm is O(lv^2)
 output_strings = []
 result = []
+sub = 0
 for i in range(0, contour_index - 1):
     # O(l) - number of contours
     blocks_in_contour = []
@@ -289,68 +290,82 @@ for i in range(0, contour_index - 1):
             sclines.append(line.Line(point.Point(b1.x + 200 - min_x, b1.y - min_y + BLOCK_SIZE), point.Point(b1.x + 200 - min_x + BLOCK_SIZE, b1.y - min_y + BLOCK_SIZE)))
             canvas.draw_line(point.Point(b1.x + 200 - min_x, b1.y - min_y + BLOCK_SIZE), point.Point(b1.x + 200 - min_x + BLOCK_SIZE, b1.y - min_y + BLOCK_SIZE), width=4, color="red")
 
-    """
     o = 0
     s = 0
-    visited = [False] * len(sclines)
     c1 = 0
-    
+    b = 0
+    visited = [False] * len(sclines)
+    visited[s] = True
+    v = 1
+    # String sorting...
+    # Complexity O(l^2) where l is the number of border lines for subcontour
     while True:
-
+        found = False
         for e in range(0, len(sclines)):
-
             if visited[e]:
                 continue
-
             if ((sclines[s].p2.x == sclines[e].p1.x and sclines[s].p2.y == sclines[e].p1.y)):
                 canvas.draw_line(sclines[e].p1, sclines[e].p2, width=4, color="black")
-                result.append(str(sclines[e].p1.x) + ";" + str(sclines[e].p1.y) + ";" + str(i))
+                if (s == o):
+                    canvas.draw_line(sclines[s].p1, sclines[s].p2, width=4, color="black")
+                    result.append(str(sclines[s].p1.x) + ";" + str(sclines[s].p1.y) + ";" + str(i) + ";" + str(i + sub))
+                result.append(str(sclines[e].p1.x) + ";" + str(sclines[e].p1.y) + ";" + str(i) + ";" + str(i + sub))
                 visited[e] = True
                 s = e
                 c1 += 1
-                break
-
-            if (sclines[s].p2.x == sclines[e].p2.x and sclines[s].p2.y == sclines[e].p2.y):
+                v += 1
+                found = True
+            elif (sclines[s].p2.x == sclines[e].p2.x and sclines[s].p2.y == sclines[e].p2.y and s != e):
                 canvas.draw_line(sclines[e].p1, sclines[e].p2, width=4, color="black")
-                result.append(str(sclines[e].p1.x) + ";" + str(sclines[e].p1.y) + ";" + str(i)) 
+                if (s == o):
+                    canvas.draw_line(sclines[s].p1, sclines[s].p2, width=4, color="black")
+                    result.append(str(sclines[s].p1.x) + ";" + str(sclines[s].p1.y) + ";" + str(i) + ";" + str(i + sub))
+                result.append(str(sclines[e].p2.x) + ";" + str(sclines[e].p2.y) + ";" + str(i) + ";" + str(i + sub))
                 visited[e] = True
                 s = e
                 c1 += 1
-                break
-
-            if (sclines[s].p1.x == sclines[e].p2.x and sclines[s].p1.y == sclines[e].p2.y):
+                v += 1
+                found = True
+            elif (sclines[s].p1.x == sclines[e].p2.x and sclines[s].p1.y == sclines[e].p2.y):
                 canvas.draw_line(sclines[e].p1, sclines[e].p2, width=4, color="black")
-                result.append(str(sclines[e].p2.x) + ";" + str(sclines[e].p2.y) + ";" + str(i))
+                if (s == o):
+                    canvas.draw_line(sclines[s].p2, sclines[s].p1, width=4, color="black")
+                    result.append(str(sclines[s].p2.x) + ";" + str(sclines[s].p2.y) + ";" + str(i) + ";" + str(i + sub))
+                result.append(str(sclines[e].p2.x) + ";" + str(sclines[e].p2.y) + ";" + str(i) + ";" + str(i + sub))
                 visited[e] = True
                 s = e
                 c1 += 1
-                break
-
-            if (sclines[s].p1.x == sclines[e].p1.x and sclines[s].p1.y == sclines[e].p1.y):
+                v += 1
+                found = True
+            elif (sclines[s].p1.x == sclines[e].p1.x and sclines[s].p1.y == sclines[e].p1.y and s != e):
                 canvas.draw_line(sclines[e].p1, sclines[e].p2, width=4, color="black")
-                result.append(str(sclines[e].p2.x) + ";" + str(sclines[e].p2.y) + ";" + str(i))
+                if (s == o):
+                    canvas.draw_line(sclines[s].p2, sclines[s].p1, width=4, color="black")
+                    result.append(str(sclines[s].p2.x) + ";" + str(sclines[s].p2.y) + ";" + str(i) + ";" + str(i + sub))
+                result.append(str(sclines[e].p1.x) + ";" + str(sclines[e].p1.y) + ";" + str(i) + ";" + str(i + sub))
                 visited[e] = True
                 s = e
                 c1 += 1
-                break
-
-            if c1 < len(sclines) and s == o:
-                print("One contour is done")
-                for i in range(0, len(visited)):
-                    if not visited:
-                        s = i
-                        o = i
-                        break
-        
-        if c1 == len(sclines):
+                v += 1
+                found = True
+        if (c1 < len(sclines) and not found):
+            for k in range(0, len(visited)):
+                if not visited[k]:
+                    s = k
+                    o = k
+                    visited[s] = True
+                    v += 1
+                    sub += 1
+                    break
+        if v == len(sclines):
             break
-    """
+
 e1 = time()
 print("Saving contours in the file, ms: " + str(((e1-s1)*1000)))
-
-fd = open("output/strings2.csv", "w")
+fd = open(params.get_ouput_file(), "w")
 for s in result:
     fd.write(s + "\n")
 fd.close()
 
+# Run main loop
 root.mainloop()

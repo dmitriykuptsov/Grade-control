@@ -26,6 +26,8 @@ class Params():
                 self.params["GRADES_FIELDS"] = [row[1], row[2], row[3], row[4]]
             if row[0] == "BLOCK_SIZE":
                 self.params["BLOCK_SIZE"] = row[1]
+            if row[0] == "OUTPUT":
+                self.params["OUTPUT"] = row[1]
     def get_grades_file(self):
         return self.params["GRADES"]
     def get_grades_fields(self):
@@ -46,3 +48,5 @@ class Params():
         return self.params["METAL"]
     def get_block_size(self):
         return self.params["BLOCK_SIZE"]
+    def get_ouput_file(self):
+        return self.params["OUTPUT"]
