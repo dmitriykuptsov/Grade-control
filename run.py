@@ -55,6 +55,8 @@ max_x = 0
 max_y = 0
 
 BLOCK_SIZE = int(params.get_block_size())
+BLOCK_HEIGHT = int(params.get_block_height())
+MIN_VOLUME = int(params.get_min_volume())
 
 blocks = []
 counter = 0
@@ -70,8 +72,6 @@ for index, row in bm_coordintates.iterrows():
 e = time()
 print("Loaded BM (ms) " + str((e-s)*1000))
 
-
-
 s = time()
 for index, row in contour_coordinates.iterrows():
 
@@ -79,7 +79,7 @@ for index, row in contour_coordinates.iterrows():
     y = float(row[params.get_y()])
 
     if x > max_x:
-        max_x = x
+        max_x = x + BLOCK_SIZE
 
     if y > max_y:
         max_y =  y + BLOCK_SIZE
@@ -108,6 +108,7 @@ max_x_ = max_x - min_x
 max_y_ = max_y - min_y
 min_y_ = min_y - min_y
 min_x_ = min_x - min_x
+
 e = time()
 
 print("Loaded contour, ms " + str((e-s)*1000))
@@ -117,8 +118,10 @@ graphics = primitives.Graphics(root)
 root.attributes('-fullscreen', True)
 width = root.winfo_screenwidth()
 height = root.winfo_screenheight()
+
 canvas = primitives.Canvas(width, height, 0, 0, max_x_, max_y_, 100, graphics)
 canvas.draw_grid()
+
 for l in lines:
     canvas.draw_line(l.p1, l.p2, width=5)
 
@@ -130,7 +133,6 @@ blocks_to_draw = []
 # and m is the number of lines in the contour
 
 s = time()
-
 
 no_duplicates = []
 duplicates = {}
@@ -175,11 +177,15 @@ for b in blocks_to_draw:
             if float(row[0]) <= b.cmetal and b.cmetal < float(row[1]):
                 b.color = row[2]
                 b.grade = int(row[3])
+                b.grade_low = float(row[0])
+                b.grade_high = float(row[1])
                 break
         else:
             if float(row[0]) <= b.cmetal:
                 b.color = row[2]
                 b.grade = int(row[3])
+                b.grade_low = float(row[0])
+                b.grade_high = float(row[1])
                 break
     canvas.draw_block(point.Point(b.x - min_x + 100, b.y - min_y), point.Point(b.x + BLOCK_SIZE - min_x + 100, b.y + BLOCK_SIZE - min_y), b.color)
 
@@ -207,6 +213,9 @@ for b in blocks_to_draw:
     
     visited = [False] * len(blocks_to_draw)
     adjucency_matrix = []
+    total_volume = 0
+    average_content = 0
+    total_blocks_in_contour = 1
 
     while len(queue) > 0:
 
@@ -229,27 +238,42 @@ for b in blocks_to_draw:
                     queue.append(b2)
                     b2.visited = True
                     adjucency_matrix.append(b2)
+                    total_blocks_in_contour += 1
+                    total_volume += BLOCK_SIZE * BLOCK_SIZE * BLOCK_HEIGHT
+                    average_content += b2.cmetal
             
             if b1.x - BLOCK_SIZE == b2.x and b1.y == b2.y and b1.grade == b2.grade:
                 if not b2.visited:
                     queue.append(b2)
                     b2.visited = True
                     adjucency_matrix.append(b2)
+                    total_blocks_in_contour += 1
+                    total_volume += BLOCK_SIZE * BLOCK_SIZE * BLOCK_HEIGHT
+                    average_content += b2.cmetal
 
             if b1.x == b2.x and b1.y + BLOCK_SIZE == b2.y and b1.grade == b2.grade:
                 if not b2.visited:                    
                     queue.append(b2)
                     b2.visited = True
                     adjucency_matrix.append(b2)
+                    total_blocks_in_contour += 1
+                    total_volume += BLOCK_SIZE * BLOCK_SIZE * BLOCK_HEIGHT
+                    average_content += b2.cmetal
 
             if b1.x == b2.x and b1.y - BLOCK_SIZE == b2.y and b1.grade == b2.grade:
                 if not b2.visited:                    
                     queue.append(b2)
                     b2.visited = True
                     adjucency_matrix.append(b2)
-    
+                    total_blocks_in_contour += 1
+                    total_volume += BLOCK_SIZE * BLOCK_SIZE * BLOCK_HEIGHT
+                    average_content += b2.cmetal
+
     for i in range(0, len(adjucency_matrix)):
         adjucency_matrix[i].contour = contour_index
+        adjucency_matrix[i].total_blocks_in_contour = total_blocks_in_contour
+        adjucency_matrix[i].average_content = average_content / total_blocks_in_contour
+        adjucency_matrix[i].sum_average_content = average_content
 
     contour_index += 1
 
@@ -272,7 +296,7 @@ for b in blocks_to_draw:
 
 s1 = time()
 
-# The complexity of the algorithm is O(lv^2)
+# The complexity of the algorithm is O(l(v^2 + q^2))
 output_strings = []
 result = []
 sub = 0
@@ -321,8 +345,9 @@ for i in range(0, contour_index - 1):
     visited = [False] * len(sclines)
     visited[s] = True
     v = 1
+    start_point = None
     # String sorting...
-    # Complexity O(l^2) where l is the number of border lines for subcontour
+    # Complexity O(q^2) where q is the number of border lines for subcontour
     while True:
         found = False
         for e in range(0, len(sclines)):
@@ -333,6 +358,7 @@ for i in range(0, contour_index - 1):
                 if (s == o):
                     canvas.draw_line(sclines[s].p1, sclines[s].p2, width=4, color="black")
                     result.append(str(sclines[s].p1.x) + ";" + str(sclines[s].p1.y) + ";" + str(i) + ";" + str(i + sub))
+                    start_point = str(sclines[s].p1.x) + ";" + str(sclines[s].p1.y) + ";" + str(i) + ";" + str(i + sub)
                 result.append(str(sclines[e].p1.x) + ";" + str(sclines[e].p1.y) + ";" + str(i) + ";" + str(i + sub))
                 visited[e] = True
                 s = e
@@ -344,6 +370,7 @@ for i in range(0, contour_index - 1):
                 if (s == o):
                     canvas.draw_line(sclines[s].p1, sclines[s].p2, width=4, color="black")
                     result.append(str(sclines[s].p1.x) + ";" + str(sclines[s].p1.y) + ";" + str(i) + ";" + str(i + sub))
+                    start_point = str(sclines[s].p1.x) + ";" + str(sclines[s].p1.y) + ";" + str(i) + ";" + str(i + sub)
                 result.append(str(sclines[e].p2.x) + ";" + str(sclines[e].p2.y) + ";" + str(i) + ";" + str(i + sub))
                 visited[e] = True
                 s = e
@@ -355,6 +382,7 @@ for i in range(0, contour_index - 1):
                 if (s == o):
                     canvas.draw_line(sclines[s].p2, sclines[s].p1, width=4, color="black")
                     result.append(str(sclines[s].p2.x) + ";" + str(sclines[s].p2.y) + ";" + str(i) + ";" + str(i + sub))
+                    start_point = str(sclines[s].p2.x) + ";" + str(sclines[s].p2.y) + ";" + str(i) + ";" + str(i + sub)
                 result.append(str(sclines[e].p2.x) + ";" + str(sclines[e].p2.y) + ";" + str(i) + ";" + str(i + sub))
                 visited[e] = True
                 s = e
@@ -366,6 +394,7 @@ for i in range(0, contour_index - 1):
                 if (s == o):
                     canvas.draw_line(sclines[s].p2, sclines[s].p1, width=4, color="black")
                     result.append(str(sclines[s].p2.x) + ";" + str(sclines[s].p2.y) + ";" + str(i) + ";" + str(i + sub))
+                    start_point = str(sclines[s].p2.x) + ";" + str(sclines[s].p2.y) + ";" + str(i) + ";" + str(i + sub)
                 result.append(str(sclines[e].p1.x) + ";" + str(sclines[e].p1.y) + ";" + str(i) + ";" + str(i + sub))
                 visited[e] = True
                 s = e
@@ -380,16 +409,66 @@ for i in range(0, contour_index - 1):
                     visited[s] = True
                     v += 1
                     sub += 1
+                    result.append(start_point)
                     break
         if v == len(sclines):
+            result.append(start_point)
             break
-
+        #203.328228999977;25.481997000053525;0;0
 e1 = time()
 print("Saving contours in the file, ms: " + str(((e1-s1)*1000)))
 fd = open(params.get_ouput_file(), "w")
 for s in result:
     fd.write(s + "\n")
 fd.close()
+
+# Run outlier supression algorithm
+output_strings = []
+result = []
+sub = 0
+
+for i in range(0, contour_index - 1):
+    # O(l) - number of contours
+    blocks_in_contour = []
+    average_content = 0
+    total_blocks_in_contour = 0
+    for b in blocks_to_draw:
+        # O(k) - number of blocks to draw
+        if b.contour == i:
+            blocks_in_contour.append(b)
+            average_content = b.average_content
+            total_blocks_in_contour = b.total_blocks_in_contour
+
+    # Check if the volume is less than the minimum volume
+    if total_blocks_in_contour * BLOCK_SIZE * BLOCK_SIZE * BLOCK_HEIGHT >= MIN_VOLUME:
+        continue
+    
+    # O(v^2) - average number of blocks in contour
+    for b1 in blocks_in_contour:
+        
+        left = False
+        right = False
+        top = False
+        bottom = False
+
+        for b2 in blocks_in_contour:
+            if b1.x + BLOCK_SIZE == b2.x and b1.y == b2.y:
+                right = True
+            if b1.x - BLOCK_SIZE == b2.x and b1.y == b2.y:
+                left = True
+            if b1.x == b2.x and b1.y + BLOCK_SIZE == b2.y:
+                bottom = True
+            if b1.x == b2.x and b1.y - BLOCK_SIZE == b2.y:
+                top = True
+        if not right:
+            pass
+        if not left:
+            pass
+        if not top:
+            pass
+        if not bottom:
+            pass
+
 
 # Run main loop
 root.mainloop()

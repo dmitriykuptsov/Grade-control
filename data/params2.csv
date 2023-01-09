@@ -9,4 +9,7 @@ X;EAST;;;
 Y;NORTH;;;
 METAL;Cu_PCT;;;
 BLOCK_SIZE;5;;;
+BLOCK_HEIGHT;5;;;
 OUTPUT;output/strings_final.csv;;;
+OUTPUT_OPTIMIZED;output/strings_optimized.csv;;;
+MIN_VOLUME;175;;;

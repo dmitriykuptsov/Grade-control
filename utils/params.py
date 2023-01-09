@@ -28,6 +28,12 @@ class Params():
                 self.params["BLOCK_SIZE"] = row[1]
             if row[0] == "OUTPUT":
                 self.params["OUTPUT"] = row[1]
+            if row[0] == "BLOCK_HEIGHT":
+                self.params["BLOCK_HEIGHT"] = row[1]
+            if row[0] == "OUTPUT_OPTIMIZED":
+                self.params["OUTPUT_OPTIMIZED"] = row[1]
+            if row[0] == "MIN_VOLUME":
+                self.params["MIN_VOLUME"] = row[1]
     def get_grades_file(self):
         return self.params["GRADES"]
     def get_grades_fields(self):
@@ -50,3 +56,9 @@ class Params():
         return self.params["BLOCK_SIZE"]
     def get_ouput_file(self):
         return self.params["OUTPUT"]
+    def get_output_optimized_file(self):
+        return self.params["OUTPUT_OPTIMIZED"]
+    def get_block_height(self):
+        return self.params["BLOCK_HEIGHT"]
+    def get_min_volume(self):
+        return self.params["MIN_VOLUME"]
