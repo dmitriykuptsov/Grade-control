@@ -42,7 +42,7 @@ from geometry import block
 
 from time import time
 
-params = params.Params("params.csv")
+params = params.Params("data/params.csv")
 bm_coordintates = coordinates.Coordinates.load(params.get_bm_file(), params.get_bm_fields())
 contour_coordinates = coordinates.Coordinates.load(params.get_contour_file(), params.get_contour_fields())
 grades = grades.Grades.load(params.get_grades_file(), params.get_grades_fields())
@@ -330,16 +330,16 @@ for i in range(0, contour_index - 1):
             if b1.x == b2.x and b1.y - BLOCK_SIZE == b2.y:
                 top = True
         if not right:
-            sclines.append(line.Line(point.Point(b1.x + 200 - min_x + BLOCK_SIZE, b1.y - min_y), point.Point(b1.x + BLOCK_SIZE + 200 - min_x, b1.y - min_y + BLOCK_SIZE)))
+            sclines.append(line.Line(point.Point(b1.x - min_x + BLOCK_SIZE, b1.y - min_y), point.Point(b1.x + BLOCK_SIZE - min_x, b1.y - min_y + BLOCK_SIZE)))
             #canvas.draw_line(point.Point(b1.x + 200 - min_x + BLOCK_SIZE, b1.y - min_y), point.Point(b1.x + BLOCK_SIZE + 200 - min_x, b1.y - min_y + BLOCK_SIZE), width=4, color="red")
         if not left:
-            sclines.append(line.Line(point.Point(b1.x + 200 - min_x, b1.y - min_y), point.Point(b1.x + 200 - min_x, b1.y - min_y + BLOCK_SIZE)))
+            sclines.append(line.Line(point.Point(b1.x - min_x, b1.y - min_y), point.Point(b1.x - min_x, b1.y - min_y + BLOCK_SIZE)))
             #canvas.draw_line(point.Point(b1.x + 200 - min_x, b1.y - min_y), point.Point(b1.x + 200 - min_x, b1.y - min_y + BLOCK_SIZE), width=4, color="red")
         if not top:
-            sclines.append(line.Line(point.Point(b1.x + 200 - min_x, b1.y - min_y), point.Point(b1.x + 200 - min_x + BLOCK_SIZE, b1.y - min_y)))
+            sclines.append(line.Line(point.Point(b1.x - min_x, b1.y - min_y), point.Point(b1.x - min_x + BLOCK_SIZE, b1.y - min_y)))
             #canvas.draw_line(point.Point(b1.x + 200 - min_x, b1.y - min_y), point.Point(b1.x + 200 - min_x + BLOCK_SIZE, b1.y - min_y), width=4, color="red")
         if not bottom:
-            sclines.append(line.Line(point.Point(b1.x + 200 - min_x, b1.y - min_y + BLOCK_SIZE), point.Point(b1.x + 200 - min_x + BLOCK_SIZE, b1.y - min_y + BLOCK_SIZE)))
+            sclines.append(line.Line(point.Point(b1.x - min_x, b1.y - min_y + BLOCK_SIZE), point.Point(b1.x - min_x + BLOCK_SIZE, b1.y - min_y + BLOCK_SIZE)))
             #canvas.draw_line(point.Point(b1.x + 200 - min_x, b1.y - min_y + BLOCK_SIZE), point.Point(b1.x + 200 - min_x + BLOCK_SIZE, b1.y - min_y + BLOCK_SIZE), width=4, color="red")
 
     o = 0
@@ -361,9 +361,9 @@ for i in range(0, contour_index - 1):
                 #canvas.draw_line(sclines[e].p1, sclines[e].p2, width=4, color="black")
                 if (s == o):
                     #canvas.draw_line(sclines[s].p1, sclines[s].p2, width=4, color="black")
-                    result.append(str(sclines[s].p1.x) + ";" + str(sclines[s].p1.y) + ";" + str(i) + ";" + str(i + sub))
-                    start_point = str(sclines[s].p1.x) + ";" + str(sclines[s].p1.y) + ";" + str(i) + ";" + str(i + sub)
-                result.append(str(sclines[e].p1.x) + ";" + str(sclines[e].p1.y) + ";" + str(i) + ";" + str(i + sub))
+                    result.append(str(sclines[s].p1.x + min_x) + ";" + str(sclines[s].p1.y + min_y) + ";" + str(i) + ";" + str(i + sub))
+                    start_point = str(sclines[s].p1.x + min_x) + ";" + str(sclines[s].p1.y + min_y) + ";" + str(i) + ";" + str(i + sub)
+                result.append(str(sclines[e].p1.x + min_x) + ";" + str(sclines[e].p1.y + min_y) + ";" + str(i) + ";" + str(i + sub))
                 visited[e] = True
                 s = e
                 c1 += 1
@@ -373,9 +373,9 @@ for i in range(0, contour_index - 1):
                 #canvas.draw_line(sclines[e].p1, sclines[e].p2, width=4, color="black")
                 if (s == o):
                     #canvas.draw_line(sclines[s].p1, sclines[s].p2, width=4, color="black")
-                    result.append(str(sclines[s].p1.x) + ";" + str(sclines[s].p1.y) + ";" + str(i) + ";" + str(i + sub))
-                    start_point = str(sclines[s].p1.x) + ";" + str(sclines[s].p1.y) + ";" + str(i) + ";" + str(i + sub)
-                result.append(str(sclines[e].p2.x) + ";" + str(sclines[e].p2.y) + ";" + str(i) + ";" + str(i + sub))
+                    result.append(str(sclines[s].p1.x + min_x) + ";" + str(sclines[s].p1.y + min_y) + ";" + str(i) + ";" + str(i + sub))
+                    start_point = str(sclines[s].p1.x + min_x) + ";" + str(sclines[s].p1.y + min_y) + ";" + str(i) + ";" + str(i + sub)
+                result.append(str(sclines[e].p2.x + min_x) + ";" + str(sclines[e].p2.y + min_y) + ";" + str(i) + ";" + str(i + sub))
                 visited[e] = True
                 s = e
                 c1 += 1
@@ -385,9 +385,9 @@ for i in range(0, contour_index - 1):
                 #canvas.draw_line(sclines[e].p1, sclines[e].p2, width=4, color="black")
                 if (s == o):
                     #canvas.draw_line(sclines[s].p2, sclines[s].p1, width=4, color="black")
-                    result.append(str(sclines[s].p2.x) + ";" + str(sclines[s].p2.y) + ";" + str(i) + ";" + str(i + sub))
-                    start_point = str(sclines[s].p2.x) + ";" + str(sclines[s].p2.y) + ";" + str(i) + ";" + str(i + sub)
-                result.append(str(sclines[e].p2.x) + ";" + str(sclines[e].p2.y) + ";" + str(i) + ";" + str(i + sub))
+                    result.append(str(sclines[s].p2.x + min_x) + ";" + str(sclines[s].p2.y + min_y) + ";" + str(i) + ";" + str(i + sub))
+                    start_point = str(sclines[s].p2.x + min_x) + ";" + str(sclines[s].p2.y + min_y) + ";" + str(i) + ";" + str(i + sub)
+                result.append(str(sclines[e].p2.x + min_x) + ";" + str(sclines[e].p2.y + min_y) + ";" + str(i) + ";" + str(i + sub))
                 visited[e] = True
                 s = e
                 c1 += 1
@@ -397,9 +397,9 @@ for i in range(0, contour_index - 1):
                 #canvas.draw_line(sclines[e].p1, sclines[e].p2, width=4, color="black")
                 if (s == o):
                     #canvas.draw_line(sclines[s].p2, sclines[s].p1, width=4, color="black")
-                    result.append(str(sclines[s].p2.x) + ";" + str(sclines[s].p2.y) + ";" + str(i) + ";" + str(i + sub))
-                    start_point = str(sclines[s].p2.x) + ";" + str(sclines[s].p2.y) + ";" + str(i) + ";" + str(i + sub)
-                result.append(str(sclines[e].p1.x) + ";" + str(sclines[e].p1.y) + ";" + str(i) + ";" + str(i + sub))
+                    result.append(str(sclines[s].p2.x + min_x) + ";" + str(sclines[s].p2.y + min_y) + ";" + str(i) + ";" + str(i + sub))
+                    start_point = str(sclines[s].p2.x + min_x) + ";" + str(sclines[s].p2.y + min_y) + ";" + str(i) + ";" + str(i + sub)
+                result.append(str(sclines[e].p1.x + min_x) + ";" + str(sclines[e].p1.y + min_y) + ";" + str(i) + ";" + str(i + sub))
                 visited[e] = True
                 s = e
                 c1 += 1
