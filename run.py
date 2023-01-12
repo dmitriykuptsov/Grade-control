@@ -22,7 +22,7 @@ __maintainer__ = "Dmitriy Kuptsov"
 __email__ = "dkuptsov@micromine.com"
 __status__ = "development"
 
-from tkinter import Tk, Canvas, Frame, BOTH
+#from tkinter import Tk, Canvas, Frame, BOTH
 
 import gc
 
@@ -42,7 +42,7 @@ from geometry import block
 
 from time import time
 
-params = params.Params(argv[1])
+params = params.Params("params.csv")
 bm_coordintates = coordinates.Coordinates.load(params.get_bm_file(), params.get_bm_fields())
 contour_coordinates = coordinates.Coordinates.load(params.get_contour_file(), params.get_contour_fields())
 grades = grades.Grades.load(params.get_grades_file(), params.get_grades_fields())
@@ -113,6 +113,8 @@ e = time()
 
 print("Loaded contour, ms " + str((e-s)*1000))
 
+
+"""
 root = Tk()
 graphics = primitives.Graphics(root)
 root.attributes('-fullscreen', True)
@@ -124,7 +126,7 @@ canvas.draw_grid()
 
 for l in lines:
     canvas.draw_line(l.p1, l.p2, width=5)
-
+"""
 DELTA = 100
 blocks_to_draw = []
 
@@ -187,7 +189,7 @@ for b in blocks_to_draw:
                 b.grade_low = float(row[0])
                 b.grade_high = float(row[1])
                 break
-    canvas.draw_block(point.Point(b.x - min_x + 100, b.y - min_y), point.Point(b.x + BLOCK_SIZE - min_x + 100, b.y + BLOCK_SIZE - min_y), b.color)
+    #canvas.draw_block(point.Point(b.x - min_x + 100, b.y - min_y), point.Point(b.x + BLOCK_SIZE - min_x + 100, b.y + BLOCK_SIZE - min_y), b.color)
 
 # The complexity of this algorithm is O(k^2)
 # Where k is the number of blocks that fall inside the contour
@@ -290,9 +292,11 @@ COLORS  =['linen', 'red', 'green', 'blue', 'bisque', 'orange',
 'rosy brown', 'medium slate blue', 'light coral', 'medium blue', 'tomato', 
 'dodger blue', 'salmon']
 
+"""
 for b in blocks_to_draw:
     canvas.draw_block(point.Point(b.x - min_x, b.y - min_y), point.Point(b.x + BLOCK_SIZE - min_x, b.y + BLOCK_SIZE - min_y), COLORS[b.contour % len(COLORS)])
     canvas.draw_text(point.Point(b.x - min_x + 2.5, b.y - min_y + 2.5), str(b.contour), color="black")
+"""
 
 s1 = time()
 
@@ -327,16 +331,16 @@ for i in range(0, contour_index - 1):
                 top = True
         if not right:
             sclines.append(line.Line(point.Point(b1.x + 200 - min_x + BLOCK_SIZE, b1.y - min_y), point.Point(b1.x + BLOCK_SIZE + 200 - min_x, b1.y - min_y + BLOCK_SIZE)))
-            canvas.draw_line(point.Point(b1.x + 200 - min_x + BLOCK_SIZE, b1.y - min_y), point.Point(b1.x + BLOCK_SIZE + 200 - min_x, b1.y - min_y + BLOCK_SIZE), width=4, color="red")
+            #canvas.draw_line(point.Point(b1.x + 200 - min_x + BLOCK_SIZE, b1.y - min_y), point.Point(b1.x + BLOCK_SIZE + 200 - min_x, b1.y - min_y + BLOCK_SIZE), width=4, color="red")
         if not left:
             sclines.append(line.Line(point.Point(b1.x + 200 - min_x, b1.y - min_y), point.Point(b1.x + 200 - min_x, b1.y - min_y + BLOCK_SIZE)))
-            canvas.draw_line(point.Point(b1.x + 200 - min_x, b1.y - min_y), point.Point(b1.x + 200 - min_x, b1.y - min_y + BLOCK_SIZE), width=4, color="red")
+            #canvas.draw_line(point.Point(b1.x + 200 - min_x, b1.y - min_y), point.Point(b1.x + 200 - min_x, b1.y - min_y + BLOCK_SIZE), width=4, color="red")
         if not top:
             sclines.append(line.Line(point.Point(b1.x + 200 - min_x, b1.y - min_y), point.Point(b1.x + 200 - min_x + BLOCK_SIZE, b1.y - min_y)))
-            canvas.draw_line(point.Point(b1.x + 200 - min_x, b1.y - min_y), point.Point(b1.x + 200 - min_x + BLOCK_SIZE, b1.y - min_y), width=4, color="red")
+            #canvas.draw_line(point.Point(b1.x + 200 - min_x, b1.y - min_y), point.Point(b1.x + 200 - min_x + BLOCK_SIZE, b1.y - min_y), width=4, color="red")
         if not bottom:
             sclines.append(line.Line(point.Point(b1.x + 200 - min_x, b1.y - min_y + BLOCK_SIZE), point.Point(b1.x + 200 - min_x + BLOCK_SIZE, b1.y - min_y + BLOCK_SIZE)))
-            canvas.draw_line(point.Point(b1.x + 200 - min_x, b1.y - min_y + BLOCK_SIZE), point.Point(b1.x + 200 - min_x + BLOCK_SIZE, b1.y - min_y + BLOCK_SIZE), width=4, color="red")
+            #canvas.draw_line(point.Point(b1.x + 200 - min_x, b1.y - min_y + BLOCK_SIZE), point.Point(b1.x + 200 - min_x + BLOCK_SIZE, b1.y - min_y + BLOCK_SIZE), width=4, color="red")
 
     o = 0
     s = 0
@@ -354,9 +358,9 @@ for i in range(0, contour_index - 1):
             if visited[e]:
                 continue
             if ((sclines[s].p2.x == sclines[e].p1.x and sclines[s].p2.y == sclines[e].p1.y)):
-                canvas.draw_line(sclines[e].p1, sclines[e].p2, width=4, color="black")
+                #canvas.draw_line(sclines[e].p1, sclines[e].p2, width=4, color="black")
                 if (s == o):
-                    canvas.draw_line(sclines[s].p1, sclines[s].p2, width=4, color="black")
+                    #canvas.draw_line(sclines[s].p1, sclines[s].p2, width=4, color="black")
                     result.append(str(sclines[s].p1.x) + ";" + str(sclines[s].p1.y) + ";" + str(i) + ";" + str(i + sub))
                     start_point = str(sclines[s].p1.x) + ";" + str(sclines[s].p1.y) + ";" + str(i) + ";" + str(i + sub)
                 result.append(str(sclines[e].p1.x) + ";" + str(sclines[e].p1.y) + ";" + str(i) + ";" + str(i + sub))
@@ -366,9 +370,9 @@ for i in range(0, contour_index - 1):
                 v += 1
                 found = True
             elif (sclines[s].p2.x == sclines[e].p2.x and sclines[s].p2.y == sclines[e].p2.y and s != e):
-                canvas.draw_line(sclines[e].p1, sclines[e].p2, width=4, color="black")
+                #canvas.draw_line(sclines[e].p1, sclines[e].p2, width=4, color="black")
                 if (s == o):
-                    canvas.draw_line(sclines[s].p1, sclines[s].p2, width=4, color="black")
+                    #canvas.draw_line(sclines[s].p1, sclines[s].p2, width=4, color="black")
                     result.append(str(sclines[s].p1.x) + ";" + str(sclines[s].p1.y) + ";" + str(i) + ";" + str(i + sub))
                     start_point = str(sclines[s].p1.x) + ";" + str(sclines[s].p1.y) + ";" + str(i) + ";" + str(i + sub)
                 result.append(str(sclines[e].p2.x) + ";" + str(sclines[e].p2.y) + ";" + str(i) + ";" + str(i + sub))
@@ -378,9 +382,9 @@ for i in range(0, contour_index - 1):
                 v += 1
                 found = True
             elif (sclines[s].p1.x == sclines[e].p2.x and sclines[s].p1.y == sclines[e].p2.y):
-                canvas.draw_line(sclines[e].p1, sclines[e].p2, width=4, color="black")
+                #canvas.draw_line(sclines[e].p1, sclines[e].p2, width=4, color="black")
                 if (s == o):
-                    canvas.draw_line(sclines[s].p2, sclines[s].p1, width=4, color="black")
+                    #canvas.draw_line(sclines[s].p2, sclines[s].p1, width=4, color="black")
                     result.append(str(sclines[s].p2.x) + ";" + str(sclines[s].p2.y) + ";" + str(i) + ";" + str(i + sub))
                     start_point = str(sclines[s].p2.x) + ";" + str(sclines[s].p2.y) + ";" + str(i) + ";" + str(i + sub)
                 result.append(str(sclines[e].p2.x) + ";" + str(sclines[e].p2.y) + ";" + str(i) + ";" + str(i + sub))
@@ -390,9 +394,9 @@ for i in range(0, contour_index - 1):
                 v += 1
                 found = True
             elif (sclines[s].p1.x == sclines[e].p1.x and sclines[s].p1.y == sclines[e].p1.y and s != e):
-                canvas.draw_line(sclines[e].p1, sclines[e].p2, width=4, color="black")
+                #canvas.draw_line(sclines[e].p1, sclines[e].p2, width=4, color="black")
                 if (s == o):
-                    canvas.draw_line(sclines[s].p2, sclines[s].p1, width=4, color="black")
+                    #canvas.draw_line(sclines[s].p2, sclines[s].p1, width=4, color="black")
                     result.append(str(sclines[s].p2.x) + ";" + str(sclines[s].p2.y) + ";" + str(i) + ";" + str(i + sub))
                     start_point = str(sclines[s].p2.x) + ";" + str(sclines[s].p2.y) + ";" + str(i) + ";" + str(i + sub)
                 result.append(str(sclines[e].p1.x) + ";" + str(sclines[e].p1.y) + ";" + str(i) + ";" + str(i + sub))
@@ -471,4 +475,4 @@ for i in range(0, contour_index - 1):
 
 
 # Run main loop
-root.mainloop()
+#root.mainloop()
